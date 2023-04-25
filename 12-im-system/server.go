@@ -5,17 +5,18 @@ import (
 	"io"
 	"net"
 	"sync"
+	"time"
 )
 
 type Server struct {
 	Ip   string
 	Port int
 
-	// storage online user info
+	// 用于存储所有在线用户信息
 	OnlineMap map[string]*User
 	mapLock   sync.RWMutex
 
-	// publish common message
+	// 用于广播消息
 	PubChan chan string
 }
 
@@ -24,14 +25,14 @@ func NewServer(ip string, port int) *Server {
 	server := &Server{
 		Ip:        ip,
 		Port:      port,
-		OnlineMap: make(map[string]*User),
+		OnlineMap: make(map [string] *User),
 		PubChan:   make(chan string),
 	}
 
 	return server
 }
 
-// Listen publish channel
+// Server端广播来自客户端的数据至所有的客户端
 func (this *Server) ListenPublishChannel() {
 	for {
 		msg := <-this.PubChan
@@ -44,71 +45,86 @@ func (this *Server) ListenPublishChannel() {
 	}
 }
 
-// Broadcast user online information
+// Server端将待广播消息写入channel中
 func (this *Server) Broadcast(user *User, msg string) {
 	pubMsg := "[" + user.Addr + "]" + user.Name + " " + msg
 	this.PubChan <- pubMsg
 }
 
-// Handle connection
+// Server端处理客户端的请求
 func (this *Server) Handler(conn net.Conn) {
-	// 1. new user and insert user into online map
+	// 新建User对象并使User上线
 	user := NewUser(conn)
-	this.mapLock.Lock()
-	this.OnlineMap[user.Name] = user
-	this.mapLock.Unlock()
+	user.server = this
+	user.UserOnline()
 
-	// 2. broadcast user online info
-	this.Broadcast(user, "is online")
+	// 监听用户是否活跃的channel
+	isLive := make(chan bool)
 
-	// broadcast client message
+	// 处理来自客户端的数据
 	go func() {
 		buffer := make([]byte, 4096)
+
 		for {
+			// 读取来自客户端的数据
 			n, err := conn.Read(buffer)
-			if n == 0 {
-				this.Broadcast(user, "is offline")
-				return
-			}
 			if err != nil && err != io.EOF {
 				fmt.Println("Conn read err:", err)
 				return
 			}
+			if n == 0 {
+				user.UserOffline()
+				return
+			}
 
-			// get client message content
-			msg := string(buffer[:n-1])
-			this.Broadcast(user, msg)
+			// 调用用户接口处理客户端数据
+			msg := string(buffer[:n - 1])
+			user.UserHandleMessage(msg)
+
+			// 有用户消息过来表明当前用户是活跃的
+			isLive <- true
 		}
 	}()
 
-	// block current go
-	select {}
+	// 阻塞当前Go程
+	for {
+		select {
+		case <- isLive:
+			// 当前用户是活跃的，应该重置定时器
+		case <- time.After(time.Second * 10):
+			// 已经超时，将当前用户强制下线
+			user.SendMessageToCurrentUser("You were taken offline due to timeout.")
+			user.UserOffline()
+			close(user.Channel)
+			conn.Close()
+			return
+		}
+	}
 }
 
-// Start server
+// 启动Server
 func (this *Server) Start() {
-	// 1. socket listen
+	// 监听服务器的ip和端口
 	listener, err := net.Listen("tcp", fmt.Sprintf("%s:%d", this.Ip, this.Port))
 	if err != nil {
 		fmt.Println("net.Listen err :", err)
 		return
 	}
 
-	// 4. close listen socket
+	// 退出时关闭监听器
 	defer listener.Close()
 
-	// listen publish channel
+	// 开启Go程用于广播消息
 	go this.ListenPublishChannel()
 
 	for {
-		// 2. accept
 		conn, err := listener.Accept()
 		if err != nil {
 			fmt.Println("listener accept err :", err)
 			continue
 		}
 
-		// 3. do handler
+		// 处理来自客户端的请求
 		go this.Handler(conn)
 	}
 }
