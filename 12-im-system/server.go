@@ -2,29 +2,30 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"sync"
 )
 
 type Server struct {
-	Ip 			string
-	Port 		int
+	Ip   string
+	Port int
 
 	// storage online user info
-	OnlineMap 	map [string] *User
-	mapLock		sync.RWMutex
+	OnlineMap map[string]*User
+	mapLock   sync.RWMutex
 
 	// publish common message
-	PubChan		chan string
+	PubChan chan string
 }
 
 // Create a server instance
 func NewServer(ip string, port int) *Server {
 	server := &Server{
-		Ip: 		ip,
-		Port: 		port,
-		OnlineMap: 	make(map [string] *User),
-		PubChan: 	make(chan string),	
+		Ip:        ip,
+		Port:      port,
+		OnlineMap: make(map[string]*User),
+		PubChan:   make(chan string),
 	}
 
 	return server
@@ -33,7 +34,7 @@ func NewServer(ip string, port int) *Server {
 // Listen publish channel
 func (this *Server) ListenPublishChannel() {
 	for {
-		msg := <- this.PubChan
+		msg := <-this.PubChan
 
 		this.mapLock.Lock()
 		for _, user := range this.OnlineMap {
@@ -45,7 +46,7 @@ func (this *Server) ListenPublishChannel() {
 
 // Broadcast user online information
 func (this *Server) Broadcast(user *User, msg string) {
-	pubMsg := "[" + user.Addr + "]" + user.Name + msg
+	pubMsg := "[" + user.Addr + "]" + user.Name + " " + msg
 	this.PubChan <- pubMsg
 }
 
@@ -60,7 +61,27 @@ func (this *Server) Handler(conn net.Conn) {
 	// 2. broadcast user online info
 	this.Broadcast(user, "is online")
 
-	// 3. block current go
+	// broadcast client message
+	go func() {
+		buffer := make([]byte, 4096)
+		for {
+			n, err := conn.Read(buffer)
+			if n == 0 {
+				this.Broadcast(user, "is offline")
+				return
+			}
+			if err != nil && err != io.EOF {
+				fmt.Println("Conn read err:", err)
+				return
+			}
+
+			// get client message content
+			msg := string(buffer[:n-1])
+			this.Broadcast(user, msg)
+		}
+	}()
+
+	// block current go
 	select {}
 }
 
