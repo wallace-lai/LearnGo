@@ -86,6 +86,30 @@ func (this *User) UserHandleMessage(msg string) {
 			this.SendMessageToCurrentUser("Change name to " + newName + " success.\n")
 		}
 		this.server.mapLock.Unlock()
+	} else if len(msg) > 4 && msg[:3] == "to|" {
+		// 私发消息，消息格式为：to|张三|消息内容
+
+		// 获取接收方用户名
+		remoteName := strings.Split(msg, "|")[1]
+		if remoteName == "" {
+			this.SendMessageToCurrentUser("Invalid message format.\n")
+			return
+		}
+
+		// 根据用户名找到接收方user对象
+		remoteUser, ok := this.server.OnlineMap[remoteName]
+		if !ok {
+			this.SendMessageToCurrentUser("Remote user does NOT exist.\n")
+			return
+		}
+
+		// 获取消息内容，通过接收方user对象将消息内容发送过去
+		content := strings.Split(msg, "|")[2]
+		if content == "" {
+			this.SendMessageToCurrentUser("Message content is null.\n")
+			return
+		}
+		remoteUser.SendMessageToCurrentUser(this.Name + "talks |" + content)
 	} else {
 		this.server.Broadcast(this, msg)
 	}

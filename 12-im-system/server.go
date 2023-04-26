@@ -91,7 +91,7 @@ func (this *Server) Handler(conn net.Conn) {
 		select {
 		case <- isLive:
 			// 当前用户是活跃的，应该重置定时器
-		case <- time.After(time.Second * 10):
+		case <- time.After(time.Second * 60 * 10):
 			// 已经超时，将当前用户强制下线
 			user.SendMessageToCurrentUser("You were taken offline due to timeout.")
 			user.UserOffline()
