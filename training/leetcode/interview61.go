@@ -11,6 +11,8 @@ type ListNode struct {
 	Next *ListNode
 }
 
+// https://leetcode.cn/problems/reverse-linked-list-ii/?envType=study-plan-v2&id=top-interview-150
+
 // v1 : 0ms
 func reverseList(head *ListNode, tail *ListNode) *ListNode {
 	dummy := ListNode {0, tail}
