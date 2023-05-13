@@ -2,10 +2,6 @@
 
 package main
 
-import (
-	"fmt"
-)
-
 // https://leetcode.cn/problems/course-schedule-ii/?envType=study-plan-v2&id=top-interview-150
 
 // v1 : 8ms
