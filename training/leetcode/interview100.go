@@ -6,9 +6,8 @@ import (
 	"fmt"
 )
 
-// https://leetcode.cn/problems/implement-trie-prefix-tree/?envType=study-plan-v2&id=top-interview-150
+// https://leetcode.cn/problems/word-search-ii/?envType=study-plan-v2&id=top-interview-150
 
-// v1 : 36ms
 type Trie struct {
 	isWord 		bool
 	children 	[26]*Trie
@@ -59,3 +58,8 @@ func (this *Trie) StartsWith(prefix string) bool {
 	}
 	return true
 }
+
+func findWords(board [][]byte, words []string) []string {
+
+}
+
