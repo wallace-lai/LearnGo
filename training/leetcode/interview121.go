@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"container/heap"
 )
 
 // https://leetcode.cn/problems/kth-largest-element-in-an-array/?envType=study-plan-v2&envId=top-interview-150
@@ -122,15 +123,58 @@ func buildHeap(a *[]int) {
 	}
 }
 
+// func findKthLargest(nums []int, k int) int {
+// 	buildHeap(&nums)
+// 	for i := 0; i < k - 1; i++ {
+// 		swap(&nums, 1, len(nums))
+// 		nums = nums[0 : len(nums) - 1]
+// 		down(&nums, 1)
+// 	}
+
+// 	return nums[0]
+// }
+
+// v4 : 100ms
+type MaxHeap []int
+
+func (h MaxHeap) Len() int {
+	return len(h)
+}
+
+func (h MaxHeap) Less(i, j int) bool {
+	return h[i] > h[j]
+}
+
+func (h MaxHeap) Swap(i, j int) {
+	h[i], h[j] = h[j], h[i]
+}
+
+func (h *MaxHeap) Push(x any) {
+	*h = append(*h, x.(int))
+}
+
+func (h *MaxHeap) Pop() any {
+	old := *h
+	n := len(old)
+	x := old[n - 1]
+	*h = old[0 : n - 1]
+	return x
+}
+
 func findKthLargest(nums []int, k int) int {
-	buildHeap(&nums)
-	for i := 0; i < k - 1; i++ {
-		swap(&nums, 1, len(nums))
-		nums = nums[0 : len(nums) - 1]
-		down(&nums, 1)
+	h := MaxHeap{}
+	heap.Init(&h)
+
+	for i := 0; i < len(nums); i++ {
+		heap.Push(&h, nums[i])
 	}
 
-	return nums[0]
+	result := 0
+	for i := 0; i < k; i++ {
+		result = heap.Pop(&h).(int)
+	}
+
+	return result
 }
 
 func main() {
