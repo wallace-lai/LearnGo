@@ -33,6 +33,29 @@ func getMax(a, b int) int {
 // }
 
 // v2 : 0ms
+// func rob(nums []int) int {
+// 	n := len(nums)
+// 	if n == 1 {
+// 		return nums[0]
+// 	}
+
+// 	f0 := nums[0]
+// 	f1 := getMax(nums[0], nums[1])
+// 	f2 := 0
+// 	if n == 2 {
+// 		return f1
+// 	}
+
+// 	for i := 2; i < n; i++ {
+// 		f2 = getMax(f0 + nums[i], f1)
+// 		f0 = f1
+// 		f1 = f2
+// 	}
+
+// 	return f2
+// }
+
+// v3 : 0ms
 func rob(nums []int) int {
 	n := len(nums)
 	if n == 1 {
@@ -42,15 +65,14 @@ func rob(nums []int) int {
 	f0 := nums[0]
 	f1 := getMax(nums[0], nums[1])
 	f2 := 0
+
 	if n == 2 {
 		return f1
 	}
-
 	for i := 2; i < n; i++ {
-		f2 = getMax(f0 + nums[i], f1)
+		f2 = getMax(f1, f0 + nums[i])
 		f0 = f1
 		f1 = f2
 	}
-
 	return f2
 }

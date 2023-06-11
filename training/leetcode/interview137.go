@@ -21,23 +21,37 @@ package main
 // }
 
 // v2 : 0ms
+// func climbStairs(n int) int {
+// 	if n == 1 {
+// 		return 1
+// 	}
+// 	if n == 2 {
+// 		return 2
+// 	}
+
+// 	a := 1
+// 	b := 2
+// 	c := 0
+// 	for i := 3; i <= n; i++ {
+// 		c = a + b
+// 		a = b
+// 		b = c
+// 	}
+
+// 	return c
+// }
+
+// v3 : 0ms
 func climbStairs(n int) int {
-	if n == 1 {
-		return 1
-	}
-	if n == 2 {
-		return 2
-	}
+	f := []int {1, 2, 0}
 
-	a := 1
-	b := 2
-	c := 0
+	if n < 3 {
+		return f[n - 1]
+	}
 	for i := 3; i <= n; i++ {
-		c = a + b
-		a = b
-		b = c
+		f[2] = f[0] + f[1]
+		f[0] = f[1]
+		f[1] = f[2]
 	}
-
-	return c
+	return f[2]
 }
-
